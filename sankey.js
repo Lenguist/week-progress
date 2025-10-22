@@ -101,6 +101,22 @@ export function renderSankey(svgSelector, breakdown) {
       .append('title')
         .text(d => `${graph.nodes[d.source.index].name} → ${graph.nodes[d.target.index].name}: ${d.value}h`);
 
+  // Link value labels centered along each flow, nudged slightly left and kept black
+  g.append('g')
+    .attr('class', 'link-labels')
+    .selectAll('text')
+    .data(graph.links)
+    .join('text')
+      .attr('x', d => (d.source.x1 + d.target.x0) / 2 - 8)
+      .attr('y', d => (d.y0 + d.y1) / 2)
+      .attr('dy', '0.35em')
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#212529')
+      .attr('font-weight', 600)
+      .attr('font-size', 11)
+      .style('pointer-events', 'none')
+      .text(d => `${Math.round(d.value)}h`);
+
   // Draw nodes
   const node = g.append('g')
     .selectAll('g')

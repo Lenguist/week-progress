@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Time Tax Simulation</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #121824;
+      --muted: #9fb0c3;
+      --text: #e9f0f7;
+      --accent: #4fb3ff;
+      --accent-2: #7cffb2;
+      --danger: #ff6b6b;
+      --ok: #ffd166;
+      --good: #06d6a0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, #0b0f14 0%, #0b1119 100%);
+      color: var(--text);
+    }
+    header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e2a3b;
+      background: #0d141f;
+      position: sticky; top: 0; z-index: 10;
+    }
+    header h1 { font-size: 18px; margin: 0; letter-spacing: .5px; }
+    .wrap {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+      padding: 16px;
+      align-items: start;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid #1e2a3b;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .toolbar {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    button {
+      background: #152132;
+      color: var(--text);
+      border: 1px solid #26354d;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { border-color: #32507a; }
+    button.primary { background: #173556; border-color: #2b6aa8; }
+    button.danger { background: #2a1216; border-color: #5e1e29; color: #ffd9d9; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-top: 6px; }
+    .progress {
+      width: 100%; height: 16px; border-radius: 999px; background: #0f1a28;
+      border: 1px solid #1e2a3b; overflow: hidden; position: relative;
+    }
+    .progress > .bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+      transition: width .35s ease;
+    }
+    .statgrid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 8px; }
+    .stat {
+      background: #0f1a1a; border: 1px solid #23303a; padding: 10px; border-radius: 10px;
+    }
+    .stat h4 { margin: 0 0 4px 0; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .stat div { font-size: 18px; font-weight: 700; }
+    .legend { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid #26354d; background:#0f1622; padding:6px 8px; border-radius: 999px; font-size: 12px;
+    }
+    .dot { width:10px; height:10px; border-radius:50%; }
+    #funnel { width: 100%; height: 650px; border-radius: 10px; background: #0e1622; border:1px solid #1e2a3b; }
+    .gridline { stroke: #1c2a3d; stroke-width: 1; }
+    .label { fill: #cfe3f7; font-size: 12px; dominant-baseline: middle; }
+    .hours { fill:#9fb0c3; font-size: 11px; dominant-baseline: middle; }
+    .log {
+      max-height: 240px; overflow: auto; margin-top: 10px; padding-right: 4px;
+      border-top: 1px dashed #2a3a50; padding-top: 10px; font-size: 13px; line-height: 1.4;
+    }
+    .log p { margin: 6px 0; }
+    .dice {
+      display: flex; gap: 10px; margin-top: 10px; align-items: center;
+    }
+    .die {
+      width: 44px; height: 44px; background: #fff; border-radius: 8px;
+      display: grid; place-items: center; color: #111; font-weight: 800; box-shadow: inset 0 0 0 2px #00000015;
+    }
+    details.config {
+      margin-top: 10px;
+    }
+    details.config summary {
+      cursor: pointer; font-weight: 700; padding: 8px 0;
+    }
+    .cfg-grid { display: grid; grid-template-columns: 1.3fr 0.7fr 0.7fr; gap: 8px; }
+    .cfg-grid .head { color: var(--muted); font-size: 12px; }
+    input[type=number] {
+      width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #2a3a50;
+      background: #0e1522; color: var(--text);
+    }
+    .small { font-size: 11px; color: var(--muted); }
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
+      #funnel { height: 720px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Time Tax Simulation — Weekly Funnel & Project Progress</h1>
+    <div class="toolbar">
+      <button id="nextWeek" class="primary">Next Week ⏭ (Enter)</button>
+      <button id="reset" class="danger">Reset</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <svg id="funnel" viewBox="0 0 1000 650" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend" id="legend"></div>
+      <div class="muted small">Tip: Edit hours in the panel → allocations update & redraw automatically.</div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <div class="muted">Substantial Project (Goal: 1000 hours, Decay: −2/week)</div>
+          <div class="progress" aria-label="Project progress">
+            <div class="bar" id="progressBar"></div>
+          </div>
+          <div class="row">
+            <span class="muted" id="progressText">0 / 1000 h</span>
+            <span class="muted" id="weeksText">Week 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="statgrid">
+        <div class="stat">
+          <h4>Productive Project Hours / week</h4>
+          <div id="pph">0</div>
+        </div>
+        <div class="stat">
+          <h4>Score</h4>
+          <div id="score">0</div>
+        </div>
+        <div class="stat">
+          <h4>Total Hours / week</h4>
+          <div id="th">168</div>
+        </div>
+        <div class="stat">
+          <h4>Unallocated (must be ≥ 0)</h4>
+          <div id="unalloc">0</div>
+        </div>
+      </div>
+
+      <div class="dice" id="diceBox" style="display:none;">
+        <div class="die" id="die1">1</div>
+        <div class="die" id="die2">1</div>
+        <div id="rollResult" class="muted"></div>
+      </div>
+
+      <details class="config" open>
+        <summary>Edit Weekly Hours</summary>
+        <div class="cfg-grid">
+          <div class="head">Category</div><div class="head">Hours</div><div class="head">Notes</div>
+
+          <div>Sleep (per night)</div><div><input id="sleepPerNight" type="number" min="0" max="24" step="0.25" value="8"></div><div class="small">Multiplied by 7</div>
+
+          <div>Maintenance — Eating</div><div><input id="eat" type="number" min="0" step="0.5" value="10"></div><div></div>
+          <div>Maintenance — Commute</div><div><input id="commute" type="number" min="0" step="0.5" value="7"></div><div></div>
+          <div>Maintenance — Hygiene</div><div><input id="hygiene" type="number" min="0" step="0.5" value="7"></div><div></div>
+
+          <div>Active Rest — Exercise</div><div><input id="exercise" type="number" min="0" step="0.5" value="5"></div><div></div>
+          <div>Active Rest — Hobbies</div><div><input id="hobby" type="number" min="0" step="0.5" value="10"></div><div></div>
+
+          <div>Classes — Count</div><div><input id="classCount" type="number" min="0" max="8" step="1" value="4"></div><div class="small">How many parallel classes</div>
+          <div>Each Class — Lecture</div><div><input id="classLecture" type="number" min="0" step="0.5" value="3"></div><div class="small">Per class per week</div>
+          <div>Each Class — HW</div><div><input id="classHW" type="number" min="0" step="0.5" value="5"></div><div class="small">Per class per week</div>
+
+          <div>Non-Class Work — Productive</div><div><input id="ncProd" type="number" min="0" step="0.5" value="8"></div><div class="small">Goes to project</div>
+          <div>Non-Class Work — Unproductive</div><div><input id="ncUnprod" type="number" min="0" step="0.5" value="4"></div><div></div>
+        </div>
+      </details>
+
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- STATE ----------
+    const state = {
+      totalHours: 168,
+      week: 0,
+      decayPerWeek: 2,
+      projectGoal: 1000,
+      progress: 0,
+      score: 0,
+      colors: {
+        Total: "#4fb3ff",
+        Asleep: "#306b99",
+        Awake: "#2e86ab",
+        Maintenance: "#7a5af8",
+        Eating: "#9a7bff",
+        Commute: "#8b7bff",
+        Hygiene: "#7b7bff",
+        "Active Rest": "#00c2a8",
+        Exercise: "#19e1c0",
+        Hobby: "#21d0a9",
+        Work: "#ffc857",
+        Classes: "#ff9f1c",
+        "Class Lectures": "#ffbf69",
+        "Class HW": "#ffd08a",
+        "Non-Class Work": "#ef476f",
+        Productive: "#06d6a0",
+        Unproductive: "#ff6b6b",
+        Unallocated: "#2a3a50"
+      },
+      inputs: {
+        sleepPerNight: 8,
+        maintenance: { eating: 10, commute: 7, hygiene: 7 },
+        activeRest: { exercise: 5, hobby: 10 },
+        classes: { count: 4, lecture: 3, hw: 5 },
+        nonClass: { productive: 8, unproductive: 4 }
+      }
+    };
+
+    // ---------- UTIL ----------
+    const $ = (sel) => document.querySelector(sel);
+    const log = (msg, kind="") => {
+      const el = document.createElement("p");
+      if (kind === "good") el.style.color = "var(--good)";
+      if (kind === "warn") el.style.color = "var(--ok)";
+      if (kind === "bad") el.style.color = "var(--danger)";
+      el.textContent = msg;
+      $("#log").prepend(el);
+    };
+
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    // ---------- HOURS COMPUTATION ----------
+    function computeBreakdown() {
+      const t = state.totalHours;
+      const sleep = state.inputs.sleepPerNight * 7;
+
+      const awake = t - sleep;
+
+      const m = state.inputs.maintenance;
+      const maintenance = m.eating + m.commute + m.hygiene;
+
+      const a = state.inputs.activeRest;
+      const activeRest = a.exercise + a.hobby;
+
+      const c = state.inputs.classes;
+      const classes = c.count * (c.lecture + c.hw);
+      const classLectures = c.count * c.lecture;
+      const classHW = c.count * c.hw;
+
+      const nc = state.inputs.nonClass;
+      const nonClass = nc.productive + nc.unproductive;
+
+      const accountedAwake = maintenance + activeRest + (classes + nonClass);
+      const unallocatedAwake = Math.max(0, awake - accountedAwake);
+
+      // Productive project hours per week = Non-Class Productive
+      const pph = nc.productive;
+
+      return {
+        sleep,
+        awake,
+        maintenance: { total: maintenance, ...m },
+        activeRest: { total: activeRest, ...a },
+        work: {
+          total: classes + nonClass,
+          classes: { total: classes, classLectures, classHW, count: c.count },
+          nonClass: { total: nonClass, productive: nc.productive, unproductive: nc.unproductive }
+        },
+        unallocatedAwake,
+        pph
+      };
+    }
+
+    // ---------- SIM ----------
+    function rollDie() { return Math.floor(Math.random()*6) + 1; }
+
+    function maybeCompleteProjects() {
+      let completions = 0;
+      while (state.progress >= state.projectGoal) {
+        state.progress -= state.projectGoal;
+        completions++;
+        // Roll 2 dice
+        const d1 = rollDie(), d2 = rollDie(), sum = d1 + d2;
+        showDice(d1, d2, sum);
+        if (sum >= 10) { state.score += 50; log(`Excellent project (sum ${sum}). +50 score.`, "good"); }
+        else if (sum >= 7) { state.score += 10; log(`Decent project (sum ${sum}). +10 score.`, "warn"); }
+        else { log(`Flopped project (sum ${sum}). +0 score.`, "bad"); }
+      }
+      if (completions === 0) hideDice();
+    }
+
+    function nextWeek() {
+      const b = computeBreakdown();
+      const gain = b.pph;
+      state.week += 1;
+      state.progress += gain;
+      state.progress = Math.max(0, state.progress - state.decayPerWeek);
+      maybeCompleteProjects();
+      updateSidebar(b);
+      drawFunnel(b);
+      log(`Week ${state.week}: +${gain.toFixed(2)}h, −${state.decayPerWeek}h decay → progress ${state.progress.toFixed(1)}h.`);
+    }
+
+    function resetAll() {
+      state.week = 0;
+      state.progress = 0;
+      state.score = 0;
+      $("#log").innerHTML = "";
+      hideDice();
+      const b = computeBreakdown();
+      updateSidebar(b);
+      drawFunnel(b);
+      log("Simulation reset.");
+    }
+
+    // ---------- UI BINDINGS ----------
+    function bindInputs() {
+      const map = [
+        ["#sleepPerNight", v => state.inputs.sleepPerNight = +v],
+        ["#eat", v => state.inputs.maintenance.eating = +v],
+        ["#commute", v => state.inputs.maintenance.commute = +v],
+        ["#hygiene", v => state.inputs.maintenance.hygiene = +v],
+        ["#exercise", v => state.inputs.activeRest.exercise = +v],
+        ["#hobby", v => state.inputs.activeRest.hobby = +v],
+        ["#classCount", v => state.inputs.classes.count = +v],
+        ["#classLecture", v => state.inputs.classes.lecture = +v],
+        ["#classHW", v => state.inputs.classes.hw = +v],
+        ["#ncProd", v => state.inputs.nonClass.productive = +v],
+        ["#ncUnprod", v => state.inputs.nonClass.unproductive = +v],
+      ];
+      map.forEach(([sel, fn]) => {
+        const el = $(sel);
+        el.addEventListener("input", () => {
+          fn(el.value);
+          const b = computeBreakdown();
+          updateSidebar(b);
+          drawFunnel(b);
+        });
+      });
+    }
+
+    function showDice(d1, d2, sum) {
+      $("#diceBox").style.display = "flex";
+      $("#die1").textContent = d1;
+      $("#die2").textContent = d2;
+      $("#rollResult").textContent = `Sum = ${sum}`;
+    }
+    function hideDice() { $("#diceBox").style.display = "none"; }
+
+    function updateSidebar(b) {
+      $("#pph").textContent = b.pph.toFixed(2);
+      $("#th").textContent = state.totalHours;
+      const unalloc = Math.max(0, b.unallocatedAwake);
+      $("#unalloc").textContent = unalloc.toFixed(2);
+      const pct = clamp((state.progress / state.projectGoal) * 100, 0, 100);
+      $("#progressBar").style.width = pct + "%";
+      $("#progressText").textContent = `${state.progress.toFixed(1)} / ${state.projectGoal} h`;
+      $("#weeksText").textContent = `Week ${state.week}`;
+      $("#score").textContent = state.score;
+    }
+
+    // ---------- FUNNEL DRAW ----------
+    function drawFunnel(b) {
+      const svg = $("#funnel");
+      svg.innerHTML = ""; // clear
+      const W = 1000, H = 650, padX = 140, padY = 20, bandH = 70, gap = 12;
+      const scale = (hours) => (hours / state.totalHours) * (W - padX*2);
+
+      // gridlines (every 20h)
+      const grid = document.createElementNS("http://www.w3.org/2000/svg","g");
+      for (let h=0; h<=state.totalHours; h+=20) {
+        const x = padX + scale(h);
+        const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+        line.setAttribute("x1", x); line.setAttribute("y1", padY);
+        line.setAttribute("x2", x); line.setAttribute("y2", H - padY);
+        line.setAttribute("class","gridline");
+        grid.appendChild(line);
+
+        const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+        t.setAttribute("x", x); t.setAttribute("y", padY - 6);
+        t.setAttribute("text-anchor","middle");
+        t.setAttribute("class","hours");
+        t.textContent = h + "h";
+        grid.appendChild(t);
+      }
+      svg.appendChild(grid);
+
+      let y = padY + 20;
+
+      function rect(x,y,w,h, fill){ const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
+        r.setAttribute("x",x); r.setAttribute("y",y); r.setAttribute("width",Math.max(0,w)); r.setAttribute("height",h);
+        r.setAttribute("fill",fill); r.setAttribute("rx", 8); r.setAttribute("ry", 8);
+        r.setAttribute("opacity","0.95"); return r;
+      }
+      function label(x,y, txt, cls="label", anchor="end") {
+        const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+        t.setAttribute("x", x); t.setAttribute("y", y); t.setAttribute("text-anchor", anchor);
+        t.setAttribute("class", cls); t.textContent = txt; return t;
+      }
+
+      const laneX = padX, laneW = W - padX*2;
+
+      // Level 0: Total
+      const totalW = scale(state.totalHours);
+      svg.appendChild(rect(laneX, y, laneW, bandH, state.colors.Total));
+      svg.appendChild(label(laneX - 12, y + bandH/2, `Total (${state.totalHours}h)`, "label"));
+      y += bandH + gap;
+
+      // Level 1: Asleep vs Awake
+      const asleepW = scale(b.sleep);
+      const awakeW = scale(b.awake);
+      svg.appendChild(rect(laneX, y, asleepW, bandH, state.colors.Asleep));
+      svg.appendChild(rect(laneX + asleepW + 6, y, awakeW - 6, bandH, state.colors.Awake));
+      svg.appendChild(label(laneX - 12, y + bandH/2, `Asleep (${b.sleep}h)`, "label"));
+      svg.appendChild(label(laneX + asleepW + awakeW + 6 + 8, y + bandH/2, `Awake (${b.awake}h)`, "label","start"));
+      const awakeY = y; // remember Y to branch under it
+      y += bandH + gap;
+
+      // Level 2 under Awake: Maintenance / Active Rest / Work / Unallocated
+      const mW = scale(b.maintenance.total);
+      const aW = scale(b.activeRest.total);
+      const wW = scale(b.work.total);
+      const uW = scale(b.unallocatedAwake);
+      const underX = laneX + scale(b.sleep) + 6; // align under Awake start
+
+      let xCursor = underX;
+      svg.appendChild(rect(xCursor, y, mW, bandH, state.colors.Maintenance));
+      svg.appendChild(label(xCursor - 8, y + bandH/2, `Maintenance (${b.maintenance.total}h)`, "label"));
+      xCursor += mW + 6;
+      svg.appendChild(rect(xCursor, y, aW, bandH, state.colors["Active Rest"]));
+      svg.appendChild(label(xCursor - 8, y + bandH/2, `Active Rest (${b.activeRest.total}h)`, "label"));
+      xCursor += aW + 6;
+      svg.appendChild(rect(xCursor, y, wW, bandH, state.colors.Work));
+      svg.appendChild(label(xCursor - 8, y + bandH/2, `Work (${b.work.total}h)`, "label"));
+      xCursor += wW + 6;
+      if (uW > 0) {
+        svg.appendChild(rect(xCursor, y, uW, bandH, state.colors.Unallocated));
+        svg.appendChild(label(xCursor - 8, y + bandH/2, `Unallocated (${b.unallocatedAwake.toFixed(1)}h)`, "label"));
+      }
+      const level2Y = y;
+      y += bandH + gap;
+
+      // Level 3: Maintenance breakdown
+      let xM = underX;
+      svg.appendChild(rect(xM, y, scale(b.maintenance.eating), bandH, state.colors.Eating));
+      svg.appendChild(label(xM - 8, y + bandH/2, `Eating (${b.maintenance.eating}h)`));
+      xM += scale(b.maintenance.eating) + 6;
+      svg.appendChild(rect(xM, y, scale(b.maintenance.commute), bandH, state.colors.Commute));
+      svg.appendChild(label(xM - 8, y + bandH/2, `Commute (${b.maintenance.commute}h)`));
+      xM += scale(b.maintenance.commute) + 6;
+      svg.appendChild(rect(xM, y, scale(b.maintenance.hygiene), bandH, state.colors.Hygiene));
+      svg.appendChild(label(xM - 8, y + bandH/2, `Hygiene (${b.maintenance.hygiene}h)`));
+
+      // Level 3: Active Rest breakdown
+      let xA = underX + mW + 6;
+      svg.appendChild(rect(xA, y, scale(b.activeRest.exercise), bandH, state.colors.Exercise));
+      svg.appendChild(label(xA - 8, y + bandH/2, `Exercise (${b.activeRest.exercise}h)`));
+      xA += scale(b.activeRest.exercise) + 6;
+      svg.appendChild(rect(xA, y, scale(b.activeRest.hobby), bandH, state.colors.Hobby));
+      svg.appendChild(label(xA - 8, y + bandH/2, `Hobby (${b.activeRest.hobby}h)`));
+
+      // Level 3: Work breakdown
+      let xW = underX + mW + 6 + aW + 6;
+      svg.appendChild(rect(xW, y, scale(b.work.classes.total), bandH, state.colors.Classes));
+      svg.appendChild(label(xW - 8, y + bandH/2, `Classes (${b.work.classes.total}h)`));
+      xW += scale(b.work.classes.total) + 6;
+      svg.appendChild(rect(xW, y, scale(b.work.nonClass.total), bandH, state.colors["Non-Class Work"]));
+      svg.appendChild(label(xW - 8, y + bandH/2, `Non-Class (${b.work.nonClass.total}h)`));
+      const level3Y = y;
+      y += bandH + gap;
+
+      // Level 4: Classes → Lectures & HW
+      let xC = underX + mW + 6 + aW + 6;
+      svg.appendChild(rect(xC, y, scale(b.work.classes.classLectures), bandH, state.colors["Class Lectures"]));
+      svg.appendChild(label(xC - 8, y + bandH/2, `Class Lectures (${b.work.classes.classLectures}h)`));
+      xC += scale(b.work.classes.classLectures) + 6;
+      svg.appendChild(rect(xC, y, scale(b.work.classes.classHW), bandH, state.colors["Class HW"]));
+      svg.appendChild(label(xC - 8, y + bandH/2, `Class HW (${b.work.classes.classHW}h)`));
+
+      // Level 4: Non-Class → Productive & Unproductive
+      let xNC = underX + mW + 6 + aW + 6 + scale(b.work.classes.total) + 6;
+      svg.appendChild(rect(xNC, y, scale(b.work.nonClass.productive), bandH, state.colors.Productive));
+      svg.appendChild(label(xNC - 8, y + bandH/2, `Productive (${b.work.nonClass.productive}h)`));
+      xNC += scale(b.work.nonClass.productive) + 6;
+      svg.appendChild(rect(xNC, y, scale(b.work.nonClass.unproductive), bandH, state.colors.Unproductive));
+      svg.appendChild(label(xNC - 8, y + bandH/2, `Unproductive (${b.work.nonClass.unproductive}h)`));
+
+      // Legend
+      const legendEl = $("#legend"); legendEl.innerHTML = "";
+      [
+        ["Asleep","Asleep"],["Awake","Awake"],
+        ["Maintenance","Maintenance"],["Eating","Eating"],["Commute","Commute"],["Hygiene","Hygiene"],
+        ["Active Rest","Active Rest"],["Exercise","Exercise"],["Hobby","Hobby"],
+        ["Work","Work"],["Classes","Classes"],["Class Lectures","Class Lectures"],["Class HW","Class HW"],
+        ["Non-Class Work","Non-Class Work"],["Productive","Productive"],["Unproductive","Unproductive"],
+        ["Unallocated","Unallocated"]
+      ].forEach(([name,key])=>{
+        const b = document.createElement("div"); b.className="badge";
+        const d = document.createElement("span"); d.className="dot"; d.style.background = state.colors[key] || "#888";
+        const t = document.createElement("span"); t.textContent = name;
+        b.appendChild(d); b.appendChild(t); legendEl.appendChild(b);
+      });
+    }
+
+    // ---------- INIT ----------
+    function init() {
+      bindInputs();
+      const b = computeBreakdown();
+      updateSidebar(b);
+      drawFunnel(b);
+
+      $("#nextWeek").addEventListener("click", nextWeek);
+      $("#reset").addEventListener("click", resetAll);
+
+      document.addEventListener("keydown", (e)=>{
+        if (e.key === "Enter") nextWeek();
+      });
+
+      log("Ready. Press Enter or 'Next Week' to advance.");
+    }
+
+    init();
+  </script>
+</body>
+</html>

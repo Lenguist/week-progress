@@ -33,7 +33,9 @@ export function drawFunnel(b) {
   function rect(x,y,w,h, fill){ const r = document.createElementNS("http://www.w3.org/2000/svg","rect");
     r.setAttribute("x",x); r.setAttribute("y",y); r.setAttribute("width",Math.max(0,w)); r.setAttribute("height",h);
     r.setAttribute("fill",fill); r.setAttribute("rx", 8); r.setAttribute("ry", 8);
-    r.setAttribute("opacity","0.95"); return r;
+    r.setAttribute("opacity","0.85"); 
+    r.setAttribute("stroke","#fff"); r.setAttribute("stroke-width","1.5");
+    return r;
   }
   function label(x,y, txt, cls="label", anchor="end") {
     const t = document.createElementNS("http://www.w3.org/2000/svg","text");

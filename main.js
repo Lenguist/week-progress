@@ -25,7 +25,7 @@ function init() {
     if (e.key === "Enter") nextWeek();
   });
 
-  log("Ready. Press Enter or 'Next Week' to advance.");
+  log("Ready. Edit hours in the panel to see your time allocation flow!");
 }
 
 init();

@@ -1,6 +1,7 @@
 // Simple horizontal flow diagram or D3 sankey if available
 import { state } from './state.js';
 import { renderSankey } from './sankey.js';
+import { renderCollapsibleSankeyBars } from './collapsible_render.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -9,18 +10,105 @@ export function drawFunnel(b) {
   svg.innerHTML = ""; // clear
   
   const W = 1000, H = 650;
-  try {
-    // Use D3 sankey if available
-    renderSankey('#funnel', b);
-  } catch (e) {
-    // Fallback simple flow
-    createSimpleFlow(b, W, H);
-  }
+  // Render collapsible vertical prototype with constant height bars and width=hours
+  renderCollapsibleSankeyBars('#funnel');
   
   // Legend
   updateLegend();
 }
 
+// Minimal from-scratch Sankey for: Total(100) → Busy(80) + Free(20) → Productive(10) + Unproductive(10)
+function renderMiniSankey(svgSel){
+  const svg = document.querySelector(svgSel);
+  const W = 1000, H = 650, pad = 80;
+
+  // Define the tiny tree
+  const total = { name: 'Total', hours: 100 };
+  const busy = { name: 'Busy', hours: 80, parent: total };
+  const free = { name: 'Free', hours: 20, parent: total };
+  const prod = { name: 'Productive', hours: 10, parent: free };
+  const unprod = { name: 'Unproductive', hours: 10, parent: free };
+  total.children = [busy, free];
+  free.children = [prod, unprod];
+
+  // Layout columns
+  const colX = [pad, pad + 280, pad + 560];
+  const band = 16; // thickness per 10h
+  const k = band / 10; // px per hour
+  const laneGap = 40;
+
+  // Compute vertical positions
+  const midY = H / 2;
+
+  // Helper to draw a node rectangle representing an aggregate
+  function drawNode(x, yCenter, hours, color, label){
+    const h = Math.max(8, hours * k);
+    const y = yCenter - h/2;
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', x - 8);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', 16);
+    rect.setAttribute('height', h);
+    rect.setAttribute('rx', 8);
+    rect.setAttribute('fill', color);
+    rect.setAttribute('opacity','0.9');
+    rect.setAttribute('stroke','#fff');
+    rect.setAttribute('stroke-width','2');
+    svg.appendChild(rect);
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', x);
+    text.setAttribute('y', y - 8);
+    text.setAttribute('text-anchor','middle');
+    text.setAttribute('fill','#212529');
+    text.setAttribute('font-weight','700');
+    text.textContent = `${label} (${hours}h)`;
+    svg.appendChild(text);
+
+    return { x, y, h };
+  }
+
+  // Helper to draw a cubic path as a flow from right edge of left node to left edge of right node
+  function drawFlow(src, dst, hours, color){
+    const thickness = Math.max(4, hours * k);
+    const x1 = src.x + 8, y1 = src.y + src.h/2;
+    const x2 = dst.x - 8, y2 = dst.y + dst.h/2;
+    const mx = (x1 + x2) / 2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const d = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', thickness);
+    path.setAttribute('stroke-linecap','butt');
+    path.setAttribute('stroke-opacity','0.6');
+    svg.appendChild(path);
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', mx);
+    label.setAttribute('y', (y1 + y2) / 2);
+    label.setAttribute('dy','.35em');
+    label.setAttribute('text-anchor','middle');
+    label.setAttribute('fill','#212529');
+    label.setAttribute('font-size','11');
+    label.setAttribute('font-weight','600');
+    label.textContent = `${hours}h`;
+    svg.appendChild(label);
+  }
+
+  // Draw columns of nodes
+  const totalNode = drawNode(colX[0], midY, total.hours, state.colors.Total, 'Total');
+  const busyNode  = drawNode(colX[1], midY - laneGap, busy.hours, state.colors.Work, 'Busy');
+  const freeNode  = drawNode(colX[1], midY + laneGap, free.hours, state.colors['Active Rest'], 'Free');
+  const prodNode  = drawNode(colX[2], midY + laneGap - 30, prod.hours, state.colors.Productive, 'Productive');
+  const unNode    = drawNode(colX[2], midY + laneGap + 30, unprod.hours, state.colors.Unproductive, 'Unproductive');
+
+  // Draw flows
+  drawFlow(totalNode, busyNode, busy.hours, state.colors.Work);
+  drawFlow(totalNode, freeNode, free.hours, state.colors['Active Rest']);
+  drawFlow(freeNode, prodNode, prod.hours, state.colors.Productive);
+  drawFlow(freeNode, unNode, unprod.hours, state.colors.Unproductive);
+}
 function createSimpleFlow(b, W, H) {
   const svg = $("#funnel");
   

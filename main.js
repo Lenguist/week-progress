@@ -2,8 +2,8 @@
 import { state, computeBreakdown } from './src/core/state.js';
 import { applyConfigToState } from './src/core/config.js';
 import { drawFunnel } from './funnel.js';
-import { updateProgress, log } from './progress.js';
-import { nextWeek, resetAll } from './simulation.js';
+import { updateProgress, log } from './src/core/progress.js';
+import { nextWeek, resetAll } from './src/core/simulation.js';
 import { initSettingsUI } from './src/ui/settings.js';
 
 const $ = (sel) => document.querySelector(sel);

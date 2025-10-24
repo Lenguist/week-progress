@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Parameters</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Parameters</h1>
+    <div class="toolbar">
+      <a href="index.html"><button class="secondary">← Back to Simulation</button></a>
+    </div>
+  </header>
+
+  <div class="wrap full-screen-funnel" style="grid-template-columns:1fr; padding:16px;">
+    <div class="card settings-modal" style="display:block; position:relative;">
+      <div class="row">
+        <div>
+          <div class="muted">Game & Hours Configuration</div>
+        </div>
+      </div>
+
+      <details class="config" open>
+        <summary>Edit Weekly Hours</summary>
+        <div class="cfg-grid">
+          <div class="head">Category</div><div class="head">Hours</div><div class="head">Notes</div>
+
+          <div>Sleep (per night)</div><div><input id="sleepPerNight" type="number" min="0" max="24" step="0.25" value="8"></div><div class="small">Multiplied by 7</div>
+
+          <div>Maintenance — Eating</div><div><input id="eat" type="number" min="0" step="0.5" value="10"></div><div></div>
+          <div>Maintenance — Commute</div><div><input id="commute" type="number" min="0" step="0.5" value="7"></div><div></div>
+          <div>Maintenance — Hygiene</div><div><input id="hygiene" type="number" min="0" step="0.5" value="7"></div><div></div>
+
+          <div>Active Rest — Exercise</div><div><input id="exercise" type="number" min="0" step="0.5" value="5"></div><div></div>
+          <div>Active Rest — Hobbies</div><div><input id="hobby" type="number" min="0" step="0.5" value="10"></div><div></div>
+
+          <div>Classes — Count</div><div><input id="classCount" type="number" min="0" max="8" step="1" value="4"></div><div class="small">How many parallel classes</div>
+          <div>Each Class — Lecture</div><div><input id="classLecture" type="number" min="0" step="0.5" value="3"></div><div class="small">Per class per week</div>
+          <div>Each Class — HW</div><div><input id="classHW" type="number" min="0" step="0.5" value="5"></div><div class="small">Per class per week</div>
+
+          <div>Non-Class Work — Productive</div><div><input id="ncProd" type="number" min="0" step="0.5" value="8"></div><div class="small">Goes to project</div>
+          <div>Non-Class Work — Unproductive</div><div><input id="ncUnprod" type="number" min="0" step="0.5" value="4"></div><div></div>
+        </div>
+      </details>
+
+      <details class="config" open>
+        <summary>Sankey Diagram Parameters</summary>
+        <div class="cfg-grid">
+          <div class="head">Parameter</div><div class="head">Value</div><div class="head">Notes</div>
+          <div>Bar Height (px)</div><div><input id="p_barHeight" type="number" min="10" step="1" value="44"></div><div class="small">Default 44</div>
+          <div>Level Gap (px)</div><div><input id="p_levelGap" type="number" min="0" step="1" value="28"></div><div class="small">Default 28</div>
+          <div>Base Width (px)</div><div><input id="p_baseWidth" type="number" min="100" step="10" value="700"></div><div class="small">Root width</div>
+          <div>Branching Degree (0–1)</div><div><input id="p_branch" type="number" min="0" max="1" step="0.01" value="0.10"></div><div class="small">Spread between children</div>
+          <div>Connector Inset (px)</div><div><input id="p_inset" type="number" min="0" step="1" value="5"></div><div class="small">Ribbon shrink</div>
+        </div>
+      </details>
+
+      <details class="config" open>
+        <summary>Game Parameters</summary>
+        <div class="cfg-grid">
+          <div class="head">Parameter</div><div class="head">Value</div><div class="head">Notes</div>
+          <div>Project Goal (h)</div><div><input id="g_goal" type="number" min="1" step="1" value="100"></div><div class="small">Default 100</div>
+          <div>Decay per Week (h)</div><div><input id="g_decay" type="number" min="0" step="1" value="2"></div><div class="small">Default 2</div>
+          <div>Reward (Decent)</div><div><input id="g_rDecent" type="number" min="0" step="1" value="10"></div><div></div>
+          <div>Reward (Excellent)</div><div><input id="g_rExcellent" type="number" min="0" step="1" value="50"></div><div></div>
+        </div>
+      </details>
+
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button id="paramsApply" class="primary">Apply & Save</button>
+        <a href="index.html"><button class="secondary">Back to Simulation</button></a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { saveSankeyConfig, saveGameConfig, saveHoursConfig, getSankeyConfig, getGameConfig, getHoursConfig } from './src/core/config.js';
+
+    const $ = s => document.querySelector(s);
+
+    function loadAll(){
+      const s = getSankeyConfig();
+      const g = getGameConfig();
+      const h = getHoursConfig();
+      // sankey
+      $('#p_barHeight').value = s.BAR_HEIGHT;
+      $('#p_levelGap').value = s.LEVEL_GAP;
+      $('#p_baseWidth').value = s.BASE_WIDTH;
+      $('#p_branch').value = s.BRANCH_DEGREE;
+      $('#p_inset').value = s.FLOW_SHRINK_PX;
+      // game
+      $('#g_goal').value = g.projectGoal;
+      $('#g_decay').value = g.decayPerWeek;
+      $('#g_rDecent').value = g.rewardDecent;
+      $('#g_rExcellent').value = g.rewardExcellent;
+      // hours
+      $('#sleepPerNight').value = h.sleepPerNight;
+      $('#eat').value = h.maintenance.eating;
+      $('#commute').value = h.maintenance.commute;
+      $('#hygiene').value = h.maintenance.hygiene;
+      $('#exercise').value = h.activeRest.exercise;
+      $('#hobby').value = h.activeRest.hobby;
+      $('#classCount').value = h.classes.count;
+      $('#classLecture').value = h.classes.lecture;
+      $('#classHW').value = h.classes.hw;
+      $('#ncProd').value = h.nonClass.productive;
+      $('#ncUnprod').value = h.nonClass.unproductive;
+    }
+
+    function applyAll(){
+      saveSankeyConfig({
+        BAR_HEIGHT: +$('#p_barHeight').value,
+        LEVEL_GAP: +$('#p_levelGap').value,
+        LEFT_PAD: 80,
+        TOP_PAD: 60,
+        BASE_WIDTH: +$('#p_baseWidth').value,
+        BRANCH_DEGREE: +$('#p_branch').value,
+        FLOW_SHRINK_PX: +$('#p_inset').value,
+      });
+      saveGameConfig({
+        projectGoal: +$('#g_goal').value,
+        decayPerWeek: +$('#g_decay').value,
+        rewardDecent: +$('#g_rDecent').value,
+        rewardExcellent: +$('#g_rExcellent').value,
+      });
+      saveHoursConfig({
+        sleepPerNight: +$('#sleepPerNight').value,
+        maintenance: { eating: +$('#eat').value, commute: +$('#commute').value, hygiene: +$('#hygiene').value },
+        activeRest: { exercise: +$('#exercise').value, hobby: +$('#hobby').value },
+        classes: { count: +$('#classCount').value, lecture: +$('#classLecture').value, hw: +$('#classHW').value },
+        nonClass: { productive: +$('#ncProd').value, unproductive: +$('#ncUnprod').value },
+      });
+    }
+
+    $('#paramsApply').addEventListener('click', ()=>{ applyAll(); alert('Saved. Return to simulation to see changes.'); });
+    loadAll();
+  </script>
+</body>
+</html>
+

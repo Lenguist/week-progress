@@ -12,7 +12,7 @@
   <header>
     <h1>Score: <span id="hudScore">0</span></h1>
     <div class="toolbar">
-      <button id="toggleSettings" class="secondary">Settings ⚙</button>
+      <a href="parameters.html"><button id="toggleSettings" class="secondary">Parameters ⚙</button></a>
       <button id="reset" class="danger">Reset</button>
     </div>
   </header>
@@ -37,74 +37,7 @@
       <div class="legend" id="legend"></div>
       <div class="muted small funnel-tip">Tip: Edit hours in the panel → allocations update & redraw automatically.</div>
     </div>
-
-    <div class="card settings-modal" id="settingsPanel">
-      <div class="row">
-        <div>
-          <div class="muted">Substantial Project (Goal: 1000 hours, Decay: −2/week)</div>
-          <div class="progress" aria-label="Project progress">
-            <div class="bar" id="progressBar"></div>
-          </div>
-          <div class="row">
-            <span class="muted" id="progressText">0 / 1000 h</span>
-            <span class="muted" id="weeksText">Week 0</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="statgrid">
-        <div class="stat">
-          <h4>Productive Project Hours / week</h4>
-          <div id="pph">0</div>
-        </div>
-        <div class="stat">
-          <h4>Score</h4>
-          <div id="score">0</div>
-        </div>
-        <div class="stat">
-          <h4>Total Hours / week</h4>
-          <div id="th">168</div>
-        </div>
-        <div class="stat">
-          <h4>Unallocated (must be ≥ 0)</h4>
-          <div id="unalloc">0</div>
-        </div>
-      </div>
-
-      <div class="dice" id="diceBox" style="display:none;">
-        <div class="die" id="die1">1</div>
-        <div class="die" id="die2">1</div>
-        <div id="rollResult" class="muted"></div>
-      </div>
-
-      <details class="config" open>
-        <summary>Edit Weekly Hours</summary>
-        <div class="cfg-grid">
-          <div class="head">Category</div><div class="head">Hours</div><div class="head">Notes</div>
-
-          <div>Sleep (per night)</div><div><input id="sleepPerNight" type="number" min="0" max="24" step="0.25" value="8"></div><div class="small">Multiplied by 7</div>
-
-          <div>Maintenance — Eating</div><div><input id="eat" type="number" min="0" step="0.5" value="10"></div><div></div>
-          <div>Maintenance — Commute</div><div><input id="commute" type="number" min="0" step="0.5" value="7"></div><div></div>
-          <div>Maintenance — Hygiene</div><div><input id="hygiene" type="number" min="0" step="0.5" value="7"></div><div></div>
-
-          <div>Active Rest — Exercise</div><div><input id="exercise" type="number" min="0" step="0.5" value="5"></div><div></div>
-          <div>Active Rest — Hobbies</div><div><input id="hobby" type="number" min="0" step="0.5" value="10"></div><div></div>
-
-          <div>Classes — Count</div><div><input id="classCount" type="number" min="0" max="8" step="1" value="4"></div><div class="small">How many parallel classes</div>
-          <div>Each Class — Lecture</div><div><input id="classLecture" type="number" min="0" step="0.5" value="3"></div><div class="small">Per class per week</div>
-          <div>Each Class — HW</div><div><input id="classHW" type="number" min="0" step="0.5" value="5"></div><div class="small">Per class per week</div>
-
-          <div>Non-Class Work — Productive</div><div><input id="ncProd" type="number" min="0" step="0.5" value="8"></div><div class="small">Goes to project</div>
-          <div>Non-Class Work — Unproductive</div><div><input id="ncUnprod" type="number" min="0" step="0.5" value="4"></div><div></div>
-        </div>
-      </details>
-
-      <div class="log" id="log"></div>
-    </div>
   </div>
-
-  <div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
   <script type="module" src="main.js"></script>
 </body>

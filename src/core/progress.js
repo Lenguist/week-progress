@@ -32,6 +32,22 @@ export function showDice(d1, d2, sum) {
   const d1El = $("#die1"); if (d1El) d1El.textContent = d1;
   const d2El = $("#die2"); if (d2El) d2El.textContent = d2;
   const rr = $("#rollResult"); if (rr) rr.textContent = `Sum = ${sum}`;
+  // Also show outcome banner
+  const outcome = sum >= 10 ? { cls: 'good', msg: 'Excellent project! +50 score' }
+                 : sum >= 7 ? { cls: 'warn', msg: 'Decent project! +10 score' }
+                 : { cls: 'bad', msg: 'Flopped project. +0 score' };
+  const banner = document.getElementById('outcomeBanner');
+  const backdrop = document.getElementById('outcomeBackdrop');
+  const text = document.getElementById('outcomeText');
+  const close = document.getElementById('outcomeClose');
+  if (banner && text) {
+    banner.className = `outcome-banner ${outcome.cls}`;
+    text.textContent = outcome.msg;
+    banner.style.display = 'flex'; if (backdrop) backdrop.style.display = 'block';
+    const hide = ()=>{ banner.style.display = 'none'; if (backdrop) backdrop.style.display = 'none'; };
+    if (close) close.onclick = hide;
+    setTimeout(hide, 2500);
+  }
 }
 
 export function hideDice() { const box = $("#diceBox"); if (box) box.style.display = "none"; }

@@ -10,15 +10,14 @@
 </head>
 <body>
   <header>
-    <h1>Time Tax Simulation — Weekly Time Allocation</h1>
+    <h1>Score: <span id="hudScore">0</span></h1>
     <div class="toolbar">
-      <button id="nextWeek" class="primary">Next Week ⏭ (Enter)</button>
       <button id="toggleSettings" class="secondary">Settings ⚙</button>
       <button id="reset" class="danger">Reset</button>
     </div>
   </header>
 
-  <div class="wrap">
+  <div class="wrap full-screen-funnel">
     <div class="card">
       <div class="funnel-wrap">
       <svg id="funnel" viewBox="0 0 1000 650" preserveAspectRatio="xMidYMid meet"></svg>
@@ -101,6 +100,9 @@
   </div>
 
   <div id="backdrop" class="backdrop" aria-hidden="true"></div>
+  <div id="bottomBar" class="bbar">
+    <button id="nextWeek" class="primary">Next Week ⏭ (Enter)</button>
+  </div>
 
   <script type="module" src="main.js"></script>
 </body>

@@ -40,6 +40,10 @@ function init() {
   });
 
   log("Ready. Edit hours in the panel to see your time allocation flow!");
+
+  // HUD score sync
+  const scoreEl = document.getElementById('hudScore');
+  if (scoreEl) scoreEl.textContent = String(0);
 }
 
 init();

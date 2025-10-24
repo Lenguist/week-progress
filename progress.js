@@ -13,6 +13,8 @@ export function updateProgress(b) {
   $("#progressText").textContent = `${state.progress.toFixed(1)} / ${state.projectGoal} h`;
   $("#weeksText").textContent = `Week ${state.week}`;
   $("#score").textContent = state.score;
+  const scoreEl = document.getElementById('hudScore');
+  if (scoreEl) scoreEl.textContent = String(state.score);
 
   // vertical progress UI
   const vFill = document.getElementById('vProgressFill');

@@ -19,9 +19,11 @@ export function updateProgress(b) {
   // vertical progress UI
   const vFill = document.getElementById('vProgressFill');
   const vLabel = document.getElementById('vProgressLabel');
+  const vCount = document.getElementById('vProgressCount');
   if (vFill && vLabel) {
     vFill.style.height = pct + '%';
     vLabel.textContent = Math.round(pct) + '%';
+    if (vCount) vCount.textContent = `${state.progress.toFixed(1)} / ${state.projectGoal} h`;
   }
 }
 

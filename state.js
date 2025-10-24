@@ -3,7 +3,7 @@ export const state = {
   totalHours: 168,
   week: 0,
   decayPerWeek: 2,
-  projectGoal: 1000,
+  projectGoal: 100,
   progress: 0,
   score: 0,
   colors: {

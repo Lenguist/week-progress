@@ -1,11 +1,13 @@
 // Rendering for collapsible vertical sankey where HOURS control WIDTH, height is constant
 import { createInitialTree, getColorByName } from './collapsible_model.js';
 
-const BAR_HEIGHT = 44;      // constant pixel height for each node bar
-const LEVEL_GAP  = 28;      // vertical gap between levels (rows)
-const LEFT_PAD   = 80;      // left padding for root
-const TOP_PAD    = 60;      // top padding for first row
-const BASE_WIDTH = 700;     // maximum width allotted to the root; children subdivide this width
+const BAR_HEIGHT     = 44;      // constant pixel height for each node bar
+const LEVEL_GAP      = 28;      // vertical gap between levels (rows)
+const LEFT_PAD       = 80;      // left padding for root
+const TOP_PAD        = 60;      // top padding for first row
+const BASE_WIDTH     = 700;     // maximum width allotted to the root; children subdivide this width
+const BRANCH_DEGREE  = 0.10;    // 10% branching spread: adds horizontal breathing room for children rows
+const FLOW_SHRINK_PX = 5;       // connectors are inset by ~5px on each side at both levels
 
 /**
  * Compute layout for visible nodes. Width scales with hours.
@@ -16,7 +18,7 @@ const BASE_WIDTH = 700;     // maximum width allotted to the root; children subd
 function computeLayout(root, viewport){
   /** @type {import('./sankey_types').LayoutNode[]} */
   const nodes = [];
-  /** flow rectangles connecting levels */
+  /** flow ribbons connecting levels */
   const flows = [];
 
   function place(node, depth, xStart, width){
@@ -26,13 +28,27 @@ function computeLayout(root, viewport){
 
     if (!node.expanded || !node.children || node.children.length === 0) return;
     const sum = node.children.reduce((a,c)=>a+c.hours,0) || 1;
-    let cursorX = xStart;
-    node.children.forEach(child => {
-      const childW = (child.hours / sum) * w;
-      // record flow area from parent bottom to child top for this width slice
-      flows.push({ x: cursorX, y0: y + BAR_HEIGHT, y1: TOP_PAD + (depth+1)*(BAR_HEIGHT+LEVEL_GAP), w: childW, color: getColorByName(child.name) });
+    const extra = w * BRANCH_DEGREE;                 // total additional width to spread across row
+    const n = node.children.length;
+    const gap = (n > 1) ? (extra / (n - 1)) : 0;     // distribute ONLY between children (no outer margins)
+    let cursorX = xStart;                             // left start aligns with parent left edge
+    let accumShare = 0;                               // fraction of parent's width consumed by previous siblings (for top position)
+
+    node.children.forEach((child, idx) => {
+      const share = (child.hours / sum);
+      const childW = share * w;                      // content width stays proportional to parent width
+      // Top (inside parent): start based on share position within parent width
+      const topX = xStart + accumShare * w;
+      const topW = childW;
+      // Bottom (children row): true content width with only BETWEEN gaps
+      const botX = cursorX;
+      const botW = childW;
+      const yTop = y + BAR_HEIGHT;
+      const yBot = TOP_PAD + (depth+1)*(BAR_HEIGHT+LEVEL_GAP);
+      flows.push({ x0: topX, w0: topW, y0: yTop, x1: botX, w1: botW, y1: yBot, color: getColorByName(child.name) });
       place(child, depth+1, cursorX, childW);
-      cursorX += childW;
+      cursorX += childW + gap;                       // add gap between siblings (no outer margins)
+      accumShare += share;
     });
   }
 
@@ -41,14 +57,28 @@ function computeLayout(root, viewport){
 }
 
 function drawFlowRect(svg, f){
-  const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
-  r.setAttribute('x', f.x);
-  r.setAttribute('y', f.y0);
-  r.setAttribute('width', Math.max(1, f.w));
-  r.setAttribute('height', Math.max(2, f.y1 - f.y0));
-  r.setAttribute('fill', f.color);
-  r.setAttribute('opacity','0.18');
-  svg.appendChild(r);
+  // Smoothly widen from top (x0..x0+w0) to bottom (x1..x1+w1)
+  const w0 = Math.max(1, f.w0);
+  const w1 = Math.max(1, f.w1);
+  const inset0 = Math.min(w0 / 2 - 1, FLOW_SHRINK_PX);
+  const inset1 = Math.min(w1 / 2 - 1, FLOW_SHRINK_PX);
+  const x0L = f.x0 + inset0, x0R = f.x0 + w0 - inset0;
+  const x1L = f.x1 + inset1, x1R = f.x1 + w1 - inset1;
+  const y0 = f.y0, y1 = f.y1;
+  const cy = (y1 - y0) * 0.45; // vertical curvature
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const d = [
+    `M ${x0L} ${y0}`,
+    `C ${x0L} ${y0 + cy}, ${x1L} ${y1 - cy}, ${x1L} ${y1}`,
+    `L ${x1R} ${y1}`,
+    `C ${x1R} ${y1 - cy}, ${x0R} ${y0 + cy}, ${x0R} ${y0}`,
+    'Z'
+  ].join(' ');
+  path.setAttribute('d', d);
+  path.setAttribute('fill', f.color);
+  path.setAttribute('opacity', '0.22');
+  path.setAttribute('stroke', 'none');
+  svg.appendChild(path);
 }
 
 function drawBar(svg, n){

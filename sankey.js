@@ -53,10 +53,11 @@ export function renderSankey(svgSelector, breakdown) {
     'Week': 1, 'Total': 1, 'Productive': 3
   };
 
+  const vertical = true;
   const sankey = d3.sankey()
     .nodeWidth(14)
     .nodePadding(28)
-    .size([innerWidth, innerHeight])
+    .size([vertical ? innerHeight : innerWidth, vertical ? innerWidth : innerHeight])
     .nodeAlign(customAlign)
     .nodeSort((a,b)=>d3.ascending(orderWeight[a.name]||0, orderWeight[b.name]||0))
     .iterations(64);
@@ -77,14 +78,26 @@ export function renderSankey(svgSelector, breakdown) {
     }
   });
 
-  // Push 'Productive' node to the lowest position in its column
+  // Push 'Productive' node to the lowest position
   const prod = graph.nodes.find(n => n.name === 'Productive');
   if (prod) {
     const nodeHeight = prod.y1 - prod.y0;
     const bottomMargin = 20;
-    prod.y0 = innerHeight - nodeHeight - bottomMargin;
+    prod.y0 = (vertical ? innerWidth : innerHeight) - nodeHeight - bottomMargin;
     prod.y1 = prod.y0 + nodeHeight;
     sankey.update(graph);
+  }
+
+  // Orient vertically: transpose x/y so flow runs top→bottom
+  if (vertical) {
+    graph.nodes.forEach(n => {
+      const x0 = n.x0, x1 = n.x1, y0 = n.y0, y1 = n.y1;
+      n.x0 = y0; n.x1 = y1; n.y0 = x0; n.y1 = x1;
+    });
+    graph.links.forEach(l => {
+      const x0 = l.x0, x1 = l.x1, y0 = l.y0, y1 = l.y1;
+      l.x0 = y0; l.x1 = y1; l.y0 = x0; l.y1 = x1;
+    });
   }
 
   // Draw links
@@ -94,7 +107,7 @@ export function renderSankey(svgSelector, breakdown) {
     .selectAll('path')
     .data(graph.links)
     .join('path')
-      .attr('d', d3.sankeyLinkHorizontal())
+      .attr('d', vertical ? d3.sankeyLinkVertical() : d3.sankeyLinkHorizontal())
       .attr('stroke', d => d.color || '#999')
       .attr('stroke-width', d => Math.max(1, d.width))
       .attr('stroke-linecap', 'butt')
@@ -107,8 +120,8 @@ export function renderSankey(svgSelector, breakdown) {
     .selectAll('text')
     .data(graph.links)
     .join('text')
-      .attr('x', d => (d.source.x1 + d.target.x0) / 2 - 8)
-      .attr('y', d => (d.y0 + d.y1) / 2)
+      .attr('x', d => vertical ? (d.x0 + d.x1) / 2 : (d.source.x1 + d.target.x0) / 2 - 8)
+      .attr('y', d => vertical ? (d.y0 + d.y1) / 2 : (d.y0 + d.y1) / 2)
       .attr('dy', '0.35em')
       .attr('text-anchor', 'middle')
       .attr('fill', '#212529')

@@ -20,6 +20,20 @@ function init() {
   $("#nextWeek").addEventListener("click", nextWeek);
   $("#reset").addEventListener("click", resetAll);
 
+  // Settings modal toggle
+  const root = document.documentElement; // use body class toggles
+  document.body.classList.add('settings-hidden');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const toggleBtn = document.getElementById('toggleSettings');
+  const backdrop = document.getElementById('backdrop');
+  function toggleSettings() {
+    const isHidden = document.body.classList.contains('settings-hidden');
+    document.body.classList.toggle('settings-hidden', !isHidden);
+    document.body.classList.toggle('settings-visible', isHidden);
+  }
+  toggleBtn.addEventListener('click', toggleSettings);
+  backdrop.addEventListener('click', toggleSettings);
+
   // Keyboard shortcut
   document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") nextWeek();

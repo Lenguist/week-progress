@@ -13,6 +13,14 @@ export function updateProgress(b) {
   $("#progressText").textContent = `${state.progress.toFixed(1)} / ${state.projectGoal} h`;
   $("#weeksText").textContent = `Week ${state.week}`;
   $("#score").textContent = state.score;
+
+  // vertical progress UI
+  const vFill = document.getElementById('vProgressFill');
+  const vLabel = document.getElementById('vProgressLabel');
+  if (vFill && vLabel) {
+    vFill.style.height = pct + '%';
+    vLabel.textContent = Math.round(pct) + '%';
+  }
 }
 
 export function showDice(d1, d2, sum) {

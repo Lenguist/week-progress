@@ -34,6 +34,18 @@ export function nextWeek() {
   updateProgress(b);
   drawFunnel(b);
   log(`Week ${state.week}: +${gain.toFixed(2)}h, −${state.decayPerWeek}h decay → progress ${state.progress.toFixed(1)}h.`);
+
+  // animate vertical delta overlay to visualize weekly gain
+  const vDelta = document.getElementById('vProgressDelta');
+  const vFill = document.getElementById('vProgressFill');
+  if (vDelta && vFill) {
+    const pctBefore = clamp(((state.progress - gain + state.decayPerWeek) / state.projectGoal) * 100, 0, 100);
+    const pctAfter = clamp((state.progress / state.projectGoal) * 100, 0, 100);
+    const delta = Math.max(0, pctAfter - pctBefore);
+    vDelta.style.opacity = delta > 0 ? '1' : '0';
+    vDelta.style.height = delta + '%';
+    setTimeout(()=>{ vDelta.style.opacity = '0'; }, 900);
+  }
 }
 
 export function resetAll() {

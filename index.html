@@ -13,18 +13,28 @@
     <h1>Time Tax Simulation — Weekly Time Allocation</h1>
     <div class="toolbar">
       <button id="nextWeek" class="primary">Next Week ⏭ (Enter)</button>
+      <button id="toggleSettings" class="secondary">Settings ⚙</button>
       <button id="reset" class="danger">Reset</button>
     </div>
   </header>
 
   <div class="wrap">
     <div class="card">
+      <div class="funnel-wrap">
       <svg id="funnel" viewBox="0 0 1000 650" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="vprog" aria-label="Project vertical progress">
+          <div class="track">
+            <div class="fill" id="vProgressFill"></div>
+            <div class="delta" id="vProgressDelta"></div>
+          </div>
+          <div class="vlabel" id="vProgressLabel">0%</div>
+        </div>
+      </div>
       <div class="legend" id="legend"></div>
       <div class="muted small">Tip: Edit hours in the panel → allocations update & redraw automatically.</div>
     </div>
 
-    <div class="card">
+    <div class="card settings-modal" id="settingsPanel">
       <div class="row">
         <div>
           <div class="muted">Substantial Project (Goal: 1000 hours, Decay: −2/week)</div>
@@ -89,6 +99,8 @@
       <div class="log" id="log"></div>
     </div>
   </div>
+
+  <div id="backdrop" class="backdrop" aria-hidden="true"></div>
 
   <script type="module" src="main.js"></script>
 </body>

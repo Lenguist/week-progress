@@ -1,7 +1,8 @@
 // Simple horizontal flow diagram or D3 sankey if available
-import { state } from './state.js';
 import { renderSankey } from './sankey.js';
-import { renderCollapsibleSankeyBars } from './collapsible_render.js';
+import { renderCollapsibleSankeyBars } from './src/sankey/collapsible_render.js';
+import { applyConfigToState } from './src/core/config.js';
+import { state } from './src/core/state.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -10,6 +11,8 @@ export function drawFunnel(b) {
   svg.innerHTML = ""; // clear
   
   const W = 1000, H = 650;
+  // Ensure state reflects saved configs (goal/decay/hours) before render
+  applyConfigToState(state);
   // Render collapsible vertical prototype with constant height bars and width=hours
   renderCollapsibleSankeyBars('#funnel');
   

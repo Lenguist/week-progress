@@ -127,7 +127,7 @@ input[type=number]:focus {
 
 /* Funnel + vertical progress layout */
 .funnel-wrap { position: relative; display: grid; grid-template-columns: 1fr 56px; gap: 12px; align-items: stretch; }
-.funnel-controls { position: absolute; bottom: -54px; left: 0; right: 0; display: flex; justify-content: center; }
+.funnel-controls { position: absolute; bottom: -20px; left: 0; right: 0; display: flex; justify-content: center; }
 .funnel-controls .primary { padding: 10px 16px; }
 .vprog { display:flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
 .vprog .vtitle { font-size: 12px; color: #495057; font-weight: 700; letter-spacing: .5px; }
@@ -139,7 +139,7 @@ input[type=number]:focus {
 
 /* Center the main content with ~20% margins */
 .full-screen-funnel > .card:first-child { display: grid; place-items: center; background: transparent; border: 0; box-shadow: none; }
-.full-screen-funnel .funnel-wrap { width: 60vw; max-width: 1100px; min-width: 780px; margin: 3vh 0; }
+.full-screen-funnel .funnel-wrap { width: 60vw; max-width: 1100px; min-width: 780px; margin: 3vh 0 40px 0; }
 
 /* Settings modal behavior */
 .settings-modal { position: relative; }
@@ -150,4 +150,8 @@ input[type=number]:focus {
 
 /* Bottom bar */
 /* removed bottom bar */
+
+/* Cleaner bottom area */
+.legend { display: none; }
+.funnel-tip { display: none; }
 

@@ -1,16 +1,19 @@
 // Main entry point - coordinates all modules
-import { computeBreakdown } from './state.js';
+import { state, computeBreakdown } from './src/core/state.js';
+import { applyConfigToState } from './src/core/config.js';
 import { drawFunnel } from './funnel.js';
-import { bindInputs } from './hours-config.js';
 import { updateProgress, log } from './progress.js';
 import { nextWeek, resetAll } from './simulation.js';
+import { initSettingsUI } from './src/ui/settings.js';
 
 const $ = (sel) => document.querySelector(sel);
 
 function init() {
-  // Bind input handlers
-  bindInputs();
-  
+  // Apply saved config to runtime state
+  applyConfigToState(state);
+  // Initialize settings overlay UI
+  initSettingsUI();
+
   // Initial render
   const b = computeBreakdown();
   updateProgress(b);

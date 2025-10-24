@@ -1,142 +1,79 @@
-Overview
+# Week Progress / Time Tax Simulation
 
-Time Tax Simulation is an interactive web visualization that demonstrates how much productive time a college student can realistically dedicate to personal or creative projects each week.
+This project visualizes weekly time allocation and project progress, now with a modular codebase and a custom collapsible “sankey-like” diagram.
 
-The concept is inspired by the idea of “time tax” — how every necessary activity (sleep, classwork, maintenance, hobbies, etc.) progressively eats away at your total available hours, leaving only a small portion for deep, independent work.
+## High-level Architecture
 
-The simulation visually breaks down how time flows from 168 hours per week into smaller categories, while tracking how long it takes to complete a "substantial project" — a hypothetical 1000-hour milestone project that also decays over time if not maintained.
+- `index.html` — Shell markup: header (Score/HUD), main canvas area (Sankey + vertical progress), Settings overlay.
+- `styles.css` — Global styling, responsive layout, vertical progress bar, settings overlay.
+- `main.js` — App bootstrap: binds inputs, sets up buttons, initializes render flow.
+- `simulation.js` — Weekly tick: computes gains/decay, updates progress/score, triggers re-render.
+- `progress.js` — Updates horizontal/vertical progress UIs, dice/outcome banner hooks.
+- `funnel.js` — Orchestrates which visualization to render into `#funnel`.
 
-Core Features
-1. Funnel Visualization
+### Visualization modules
 
-A hierarchical funnel progressively narrows from total hours per week → productive project hours.
+- `sankey.js` — D3-based Sankey (kept for reference/experiments).
+- `collapsible_model.js` — Model helpers to build the collapsible flow tree and resolve colors.
+- `collapsible_render.js` — Pure-SVG renderer for a vertical, collapsible “sankey-like” bar chart where:
+  - Bar height is constant
+  - Bar width is proportional to hours
+  - Levels are aligned in rows; total width is preserved per level
+  - Branching spread is controlled by `BRANCH_DEGREE` (children row = parent width + spread)
+  - Connectors are smooth ribbons that expand from parent to children; ribbons can be inset with `FLOW_SHRINK_PX`.
 
-Hierarchy
-168 hours (Total)
-├── Asleep (8h × 7d = 56h)
-└── Awake (112h)
-    ├── Maintenance
-    │   ├── Eating (~10h)
-    │   ├── Commute (~7h)
-    │   └── Hygiene (~7h)
-    ├── Active Rest
-    │   ├── Exercise (~5h)
-    │   └── Hobbies (~10h)
-    └── Work
-        ├── Classes
-        │   ├── Class #1 (Lecture + HW)
-        │   ├── Class #2 (Lecture + HW)
-        │   ├── Class #3 (Lecture + HW)
-        │   └── Class #4 (Lecture + HW)
-        └── Non-Class Work
-            ├── Productive Work (projects, research)
-            └── Unproductive Work (distractions, meetings)
+### Core state
 
+- `src/core/state.js` — Centralized state (`state`) and `computeBreakdown()` utilities.
 
-Each layer dynamically subtracts from the one above it. The funnel width at each level is proportional to hours remaining.
+## Folder Layout
 
-2. Project Progress Bar
+```
+week-progress/
+  index.html
+  styles.css
+  main.js
+  simulation.js
+  progress.js
+  funnel.js
+  readme.md
+  sankey.js
+  collapsible_model.js
+  collapsible_render.js
+  sankey_types.js
+  src/
+    core/
+      state.js
+```
 
-A progress bar labeled “Substantial Project” fills as you accumulate productive hours.
+## Code Responsibilities
 
-Goal: 1000 hours total
+- HUD/Controls
+  - `main.js` wires Score, Settings, Next Week.
+  - `progress.js` updates vertical progress and text counters.
+- Simulation
+  - `simulation.js` advances weeks, applies decay, logs results, triggers redraw.
+- Visualization
+  - `funnel.js` chooses visualization (currently collapsible renderer).
+  - `collapsible_model.js` provides the initial tree structure.
+  - `collapsible_render.js` renders rows, bars, and ribbons; controls expand/collapse.
 
-Decay: −2 hours per week (simulating forgetting, regressions, etc.)
+## Configurable Parameters (collapsible renderer)
 
-Completion: When the bar reaches 100%, you “roll 2 dice”:
+- `BAR_HEIGHT` — constant node bar height (px)
+- `LEVEL_GAP` — vertical gap between levels (px)
+- `BASE_WIDTH` — width allocated to root bar (px)
+- `BRANCH_DEGREE` — fractional widening of the child level relative to parent (e.g., 0.10)
+- `FLOW_SHRINK_PX` — connector inset on each side (px) to keep ribbons slightly thinner than bars
 
-Sum < 7: Flopped project
+## How rendering works (collapsible)
 
-Sum 7–9: Decent project → +10 score
+1. Layout calculates rows by depth. Children widths are proportional to parent width; gaps = `parentWidth * BRANCH_DEGREE / (childCount - 1)`.
+2. For each child, a ribbon connects the parent slice to the child span, widening smoothly; ribbons are inset by `FLOW_SHRINK_PX`.
+3. Bars draw above ribbons; each bar has a triangle for expand/collapse.
 
-Sum ≥ 10: Excellent project → +50 score
+## Dev notes
 
-Your score appears beside the progress bar and persists across weeks.
-
-3. Weekly Simulation
-
-You can press Enter (or a button) to advance by one week:
-
-Time allocations remain fixed.
-
-Progress bar updates (productive hours added, decay subtracted).
-
-Optional animation for dice roll if project completion is reached.
-
-Planned UI Elements
-Element	Description
-Funnel Chart	Hierarchical funnel (e.g., D3.js or Plotly funnel) visualizing time allocation.
-Sidebar Panel	Displays total hours, remaining productive hours, and breakdown by category.
-Progress Bar	Horizontal bar showing progress toward the 1000-hour substantial project.
-Dice Animation	Rolls two dice visually when a project completes.
-Score Counter	Displays accumulated points from completed projects.
-Next Week Button / Keyboard Shortcut	Advances simulation by 1 week.
-Technical Design
-Tech Stack
-
-Frontend: HTML + CSS + JavaScript (or TypeScript)
-
-Visualization: D3.js or Plotly.js
-
-State Management: Simple in-memory JS object
-
-Optional Backend: None (static client-side app)
-
-Data Model Example
-const timeTax = {
-  totalHours: 168,
-  sleep: 56,
-  maintenance: { eating: 10, commute: 7, hygiene: 7 },
-  activeRest: { exercise: 5, hobby: 10 },
-  work: {
-    classes: {
-      class1: { lecture: 3, hw: 5 },
-      class2: { lecture: 3, hw: 5 },
-      class3: { lecture: 3, hw: 5 },
-      class4: { lecture: 3, hw: 5 },
-    },
-    nonClass: { productive: 8, unproductive: 4 },
-  },
-};
-
-Simulation Logic
-
-Compute total productive project hours per week from funnel.
-
-Add those hours to the progress variable.
-
-Subtract 2 hours decay per week.
-
-If progress >= 1000, roll dice:
-
-let roll = Math.floor(Math.random()*6+1) + Math.floor(Math.random()*6+1);
-
-
-Update score accordingly and reset progress to 0.
-
-Example Flow
-
-Week 0: Project progress = 0 / 1000
-
-Each week: +8 productive hours − 2 decay → net +6 per week
-
-At ~167 weeks (~3.2 years), project completes → dice roll → update score.
-
-Possible Extensions
-
-Editable time allocations (sliders per category)
-
-Visualization of cumulative decay vs productivity
-
-“Life stage” presets (student, working adult, etc.)
-
-Leaderboard of scores across multiple simulated runs
-
-Directory Structure
-time-tax-sim/
-├── index.html
-├── style.css
-├── script.js
-├── README.md
-└── assets/
-    └── dice.png
+- All changes preserve current functionality; only structure and modularization were added.
+- D3 Sankey module is retained for reference but not currently used in main flow.
+- Renderer parameters are easy to tune from one place in `collapsible_render.js`.
